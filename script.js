@@ -136,19 +136,21 @@ function submitScore(points) {
 }
 
 function resetGame() {
-  gameMode = 0;
-  players = [];
-  currentPlayerIndex = 0;
-  currentThrow = 1;
-  scores = {};
-  roundScores = {};
+  if (confirm("Are you sure you want to reset the game?")) {
+    gameMode = 0;
+    players = [];
+    currentPlayerIndex = 0;
+    currentThrow = 1;
+    scores = {};
+    roundScores = {};
 
-  localStorage.removeItem("dartGameState");
+    localStorage.removeItem("dartGameState");
 
-  document.getElementById("game").style.display = "none";
-  document.getElementById("players").style.display = "none";
-  document.getElementById("mode").style.display = "block";
-  document.querySelector(".playersList").innerHTML = "";
+    document.getElementById("game").style.display = "none";
+    document.getElementById("players").style.display = "none";
+    document.getElementById("mode").style.display = "block";
+    document.querySelector(".playersList").innerHTML = "";
+  }
 }
 
 function handleDartThrow(points) {

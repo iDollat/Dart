@@ -11,3 +11,7 @@ Aplikacja webowa do śledzenia wyników w grze w rzutki. Pozwala na dodanie grac
 - Sprawdzanie limitu punktowego (bust)
 - Powiadomienia o zdobytych punktach i wygranej
 - **Zapis gry w `localStorage`**, aby wyniki nie zniknęły po odświeżeniu strony
+
+## Link
+
+[Dart](https://idollat.github.io/Dart/)

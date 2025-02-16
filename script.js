@@ -116,7 +116,7 @@ function submitScore(points) {
       alert(`Too much points! Round skipped.`);
     } else {
       scores[currentPlayer] -= roundPoints;
-      alert(`Player ${currentPlayer} threw ${roundPoints} points!`);
+      alert(`Player ${currentPlayer} gained ${roundPoints} points!`);
     }
 
     if (scores[currentPlayer] === 0) {
@@ -200,7 +200,6 @@ function updateDrawer() {
   });
 }
 
-// Ładowanie zapisanego stanu gry po odświeżeniu strony
 document.addEventListener("DOMContentLoaded", () => {
   loadGameState();
   generateDartboardButtons();

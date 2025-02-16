@@ -6,7 +6,7 @@
 
 body {
   width: 100%;
-  min-height: 100vh; /* Zapewnia, że body będzie zawsze wypełniać ekran */
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   background-image: url("darts.webp");
@@ -166,4 +166,14 @@ ul {
 
 .scoreItem span {
   font-weight: bold;
+}
+
+.reset-btn {
+  width: 100%;
+  margin-top: 50px;
+  background-color: red;
+}
+
+.reset-btn:hover {
+  background-color: darkred;
 }

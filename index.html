@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dart</title>
+    <link rel="icon" type="image/x-icon" href="icon.png" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="container" id="mode">
+      <h1>Choose game</h1>
+      <div class="buttons">
+        <button class="btn" onclick="setGameMode(301)">301</button>
+        <button class="btn" onclick="setGameMode(501)">501</button>
+      </div>
+    </div>
+    <div class="container" id="players">
+      <h1>Enter Players</h1>
+      <div class="flex">
+        <ul class="playersList"></ul>
+        <input id="playerInput" type="text" placeholder="Name" />
+        <div class="buttons">
+          <button class="btn" id="addBtn" onclick="addPlayerToList()">
+            Add
+          </button>
+          <button class="btn" onclick="startGame()">Start game</button>
+        </div>
+      </div>
+    </div>
+    <div class="container" id="game">
+      <h1 id="activePlayer">player</h1>
+      <button
+        class="btn"
+        id="toggleDrawerBtn"
+        style="color: white"
+        onclick="toggleDrawer()"
+      >
+        Show Scores
+      </button>
+      <div id="dartboard"></div>
+    </div>
+
+    <!-- Drawer -->
+    <div id="drawer" class="drawer">
+      <h2>Current Scores</h2>
+      <ul id="scoreList"></ul>
+      <button
+        class="btn"
+        id="toggleDrawerBtn"
+        style="color: white"
+        onclick="toggleDrawer()"
+      >
+        Hide Scores
+      </button>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

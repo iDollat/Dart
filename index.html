@@ -3,9 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dart</title>
+    <title>Dart Score Tracker</title>
     <link rel="icon" type="image/x-icon" href="icon.png" />
     <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="notification.css" />
   </head>
   <body>
     <div class="container" id="mode">
@@ -14,7 +15,11 @@
         <button class="btn" onclick="setGameMode(301)">301</button>
         <button class="btn" onclick="setGameMode(501)">501</button>
       </div>
+      <button class="btn" onclick="showHelp()" style="margin-top: 20px; width: 50%;">
+        <span class="icon">❓</span> How to Play
+      </button>
     </div>
+
     <div class="container" id="players">
       <h1>Enter Players</h1>
       <div class="flex">
@@ -28,16 +33,21 @@
         </div>
       </div>
     </div>
+
     <div class="container" id="game">
       <h1 id="activePlayer">player</h1>
-      <button
-        class="btn"
-        id="toggleDrawerBtn"
-        style="color: white"
-        onclick="toggleDrawer()"
-      >
-        Show Scores
-      </button>
+      <div id="remainingPoints" class="remaining-points"></div>
+      <div class="game-controls">
+        <button class="btn" id="undoButton" onclick="undoLastThrow()" disabled>
+          <span class="icon">↩️</span> Undo
+        </button>
+        <button class="btn" id="toggleDrawerBtn" onclick="toggleDrawer()">
+          <span class="icon">📊</span> Show scores
+        </button>
+        <button class="btn" id="viewToggleBtn" onclick="toggleDartboardView()">
+          Compact view
+        </button>
+      </div>
       <div id="dartboard"></div>
     </div>
 
@@ -54,6 +64,40 @@
       </button>
       <button class="btn reset-btn" onclick="resetGame()">Reset Game</button>
     </div>
+
+    <div id="helpModal" class="modal">
+      <div class="modal-content">
+        <span class="close-btn" onclick="closeHelp()">&times;</span>
+        <h2>How to Play Dart Score Tracker</h2>
+        <ol>
+          <li>Choose a game mode (301 or 501)</li>
+          <li>Add at least 2 players</li>
+          <li>Each player starts with the selected score (301 or 501) and aims to reduce it to exactly 0</li>
+          <li>Players take turns throwing 3 darts per round</li>
+          <li>Click on the dartboard buttons to record scores</li>
+          <li>If a player's score would go below 0 in a round, the entire round is skipped</li>
+          <li>The first player to reach exactly 0 wins!</li>
+        </ol>
+        <h3>Keyboard Shortcuts:</h3>
+        <ul>
+          <li>Numbers 1-9: Score single numbers</li>
+          <li>D + number: Score doubles (e.g., D2 for double 2)</li>
+          <li>T + number: Score triples (e.g., T3 for triple 3)</li>
+          <li>M: Miss (0 points)</li>
+          <li>Ctrl+Z: Cofnij ostatni rzut</li>
+        </ul>
+        <h3>Nowe funkcje:</h3>
+        <ul>
+          <li>Cofanie rzutu: Możesz cofnąć ostatni rzut używając przycisku "Cofnij rzut" lub skrótu Ctrl+Z</li>
+          <li>Wskazówki checkout: Gdy masz mniej niż 180 punktów, zobaczysz sugestię jak zakończyć grę</li>
+          <li>Kompaktowy widok: Przełącz na bardziej kompaktowy układ przycisków</li>
+        </ul>
+      </div>
+    </div>
+
+    <footer class="app-footer">
+      &copy; 2023 Dart Score Tracker | <a href="#" onclick="showHelp()">Help</a>
+    </footer>
 
     <script src="script.js"></script>
   </body>

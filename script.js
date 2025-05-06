@@ -4,6 +4,8 @@ let currentPlayerIndex = 0;
 let currentThrow = 1;
 let scores = {};
 let roundScores = {};
+let throwHistory = []; // Historia rzutów do cofania
+let playerIndices = {}; // Indeksy dla graczy o tych samych nazwach
 
 // Sprawdzenie, czy istnieje zapisany stan gry w localStorage
 function loadGameState() {
@@ -16,6 +18,8 @@ function loadGameState() {
     currentThrow = state.currentThrow;
     scores = state.scores;
     roundScores = state.roundScores;
+    throwHistory = state.throwHistory || [];
+    playerIndices = state.playerIndices || {};
 
     document.getElementById("mode").style.display = "none";
     document.getElementById("players").style.display = "none";
@@ -24,6 +28,7 @@ function loadGameState() {
     updateActivePlayer();
     generateDartboardButtons();
     updateDrawer();
+    updateRemainingPoints();
   }
 }
 
@@ -36,6 +41,8 @@ function saveGameState() {
     currentThrow,
     scores,
     roundScores,
+    throwHistory,
+    playerIndices
   };
   localStorage.setItem("dartGameState", JSON.stringify(state));
 }
@@ -56,21 +63,33 @@ function addPlayerToList() {
     return;
   }
 
-  players.push(playerName);
-  scores[playerName] = gameMode;
-  roundScores[playerName] = 0;
+  // Sprawdź, czy gracz o tej nazwie już istnieje i dodaj indeks
+  let uniquePlayerName = playerName;
+  if (players.includes(playerName)) {
+    // Sprawdź, czy mamy już indeks dla tego gracza
+    if (!playerIndices[playerName]) {
+      playerIndices[playerName] = 1;
+    }
+    // Zwiększ indeks i utwórz unikalną nazwę
+    playerIndices[playerName]++;
+    uniquePlayerName = `${playerName} (${playerIndices[playerName]})`;
+  }
+
+  players.push(uniquePlayerName);
+  scores[uniquePlayerName] = gameMode;
+  roundScores[uniquePlayerName] = 0;
 
   const playersList = document.querySelector(".playersList");
   const listItem = document.createElement("li");
-  listItem.textContent = playerName;
+  listItem.textContent = uniquePlayerName;
 
   const removeButton = document.createElement("button");
   removeButton.textContent = "✖";
   removeButton.classList.add("remove-btn");
   removeButton.onclick = function () {
-    players = players.filter((player) => player !== playerName);
-    delete scores[playerName];
-    delete roundScores[playerName];
+    players = players.filter((player) => player !== uniquePlayerName);
+    delete scores[uniquePlayerName];
+    delete roundScores[uniquePlayerName];
     playersList.removeChild(listItem);
     saveGameState();
   };
@@ -94,18 +113,123 @@ function startGame() {
   updateActivePlayer();
   generateDartboardButtons();
   updateDrawer();
+  updateRemainingPoints();
   saveGameState();
 }
 
 function updateActivePlayer() {
-  document.getElementById("activePlayer").textContent = `${
-    players[currentPlayerIndex]
-  } (${currentThrow}/3) ${roundScores[players[currentPlayerIndex]]}`;
+  const currentPlayer = players[currentPlayerIndex];
+  document.getElementById("activePlayer").textContent = `${currentPlayer} (${currentThrow}/3) ${roundScores[currentPlayer]}`;
+  
+  // Aktualizuj przycisk cofania - aktywny tylko jeśli jest historia rzutów
+  const undoButton = document.getElementById("undoButton");
+  if (undoButton) {
+    undoButton.disabled = throwHistory.length === 0;
+  }
+  
+  updateRemainingPoints();
+}
+
+function updateRemainingPoints() {
+  const currentPlayer = players[currentPlayerIndex];
+  const remainingPoints = scores[currentPlayer] - roundScores[currentPlayer];
+  const remainingPointsElement = document.getElementById("remainingPoints");
+  
+  if (remainingPointsElement) {
+    if (scores[currentPlayer] <= 180) {
+      remainingPointsElement.textContent = `Pozostało: ${remainingPoints}`;
+      remainingPointsElement.style.display = "block";
+      
+      // Dodaj wskazówkę dotyczącą checkout
+      if (remainingPoints <= 170) {
+        const checkoutHint = getCheckoutHint(remainingPoints);
+        if (checkoutHint) {
+          remainingPointsElement.innerHTML = `Pozostało: ${remainingPoints}<br><span class="checkout-hint">${checkoutHint}</span>`;
+        }
+      }
+    } else {
+      remainingPointsElement.style.display = "none";
+    }
+  }
+}
+
+// Funkcja zwracająca wskazówkę dotyczącą checkout dla popularnych wartości
+function getCheckoutHint(points) {
+  const checkouts = {
+    170: "T20 T20 Bull",
+    167: "T20 T19 Bull",
+    164: "T20 T18 Bull",
+    161: "T20 T17 Bull",
+    160: "T20 T20 D20",
+    60: "T20",
+    57: "T19",
+    54: "T18",
+    40: "D20",
+    36: "D18",
+    32: "D16",
+    24: "D12",
+    20: "D10",
+    16: "D8",
+    10: "D5",
+    8: "D4",
+    4: "D2",
+    2: "D1"
+  };
+  
+  return checkouts[points] || "";
+}
+
+function showHelp() {
+  document.getElementById("helpModal").style.display = "block";
+}
+
+function closeHelp() {
+  document.getElementById("helpModal").style.display = "none";
+}
+
+// Zamykanie modalu po kliknięciu poza jego obszarem
+window.onclick = (event) => {
+  const modal = document.getElementById("helpModal");
+  if (event.target === modal) {
+    modal.style.display = "none";
+  }
+}
+
+function addThrowToHistory(player, points) {
+  const scoreList = document.getElementById("scoreList");
+  const historyItem = document.createElement("li");
+  historyItem.classList.add("scoreItem");
+  historyItem.innerHTML = `<span>${player}</span>: ${points} punktów`;
+
+  // Dodaj nowy element na początku listy
+  if (scoreList.firstChild) {
+    scoreList.insertBefore(historyItem, scoreList.firstChild);
+  } else {
+    scoreList.appendChild(historyItem);
+  }
+
+  // Ogranicz historię do ostatnich 10 rzutów
+  if (scoreList.children.length > 10) {
+    scoreList.removeChild(scoreList.lastChild);
+  }
 }
 
 function submitScore(points) {
   const currentPlayer = players[currentPlayerIndex];
+  
+  // Zapisz stan przed rzutem do historii
+  throwHistory.push({
+    playerIndex: currentPlayerIndex,
+    throwNumber: currentThrow,
+    playerScore: scores[currentPlayer],
+    roundScore: roundScores[currentPlayer],
+    points: points
+  });
+  
   roundScores[currentPlayer] += points;
+
+  // Dodaj rzut do historii
+  addThrowToHistory(currentPlayer, points);
 
   if (currentThrow < 3) {
     currentThrow++;
@@ -113,15 +237,19 @@ function submitScore(points) {
     const roundPoints = roundScores[currentPlayer];
 
     if (scores[currentPlayer] - roundPoints < 0) {
-      alert(`Too much points! Round skipped.`);
+      showNotification(`Za dużo punktów! Runda pominięta.`, "error");
     } else {
       scores[currentPlayer] -= roundPoints;
-      alert(`Player ${currentPlayer} gained ${roundPoints} points!`);
+
+      // Użyj nieinwazyjnego powiadomienia zamiast alert
+      showNotification(`${currentPlayer} zdobył ${roundPoints} punktów!`);
     }
 
     if (scores[currentPlayer] === 0) {
-      alert(`${currentPlayer} has won! Game finished.`);
-      resetGame();
+      showWinNotification(`${currentPlayer} wygrał! Gra zakończona.`);
+      setTimeout(() => {
+        resetGame();
+      }, 3000);
       return;
     }
 
@@ -132,7 +260,71 @@ function submitScore(points) {
 
   updateActivePlayer();
   updateDrawer();
+  updateRemainingPoints();
   saveGameState();
+}
+
+// Funkcja cofania ostatniego rzutu
+function undoLastThrow() {
+  if (throwHistory.length === 0) {
+    showNotification("Nie ma rzutów do cofnięcia!", "error");
+    return;
+  }
+  
+  // Pobierz ostatni rzut z historii
+  const lastThrow = throwHistory.pop();
+  
+  // Przywróć stan gry
+  currentPlayerIndex = lastThrow.playerIndex;
+  currentThrow = lastThrow.throwNumber;
+  const currentPlayer = players[currentPlayerIndex];
+  scores[currentPlayer] = lastThrow.playerScore;
+  roundScores[currentPlayer] = lastThrow.roundScore;
+  
+  // Aktualizuj interfejs
+  updateActivePlayer();
+  updateDrawer();
+  updateRemainingPoints();
+  saveGameState();
+  
+  showNotification("Cofnięto ostatni rzut", "info");
+}
+
+function showNotification(message, type = "success") {
+  const notification = document.createElement("div");
+  notification.classList.add("notification");
+  notification.classList.add(`notification-${type}`);
+  notification.textContent = message;
+  document.body.appendChild(notification);
+
+  setTimeout(() => {
+    notification.classList.add("show");
+  }, 10);
+
+  setTimeout(() => {
+    notification.classList.remove("show");
+    setTimeout(() => {
+      document.body.removeChild(notification);
+    }, 300);
+  }, 2000);
+}
+
+function showWinNotification(message) {
+  const notification = document.createElement("div");
+  notification.classList.add("win-notification");
+  notification.textContent = message;
+  document.body.appendChild(notification);
+
+  setTimeout(() => {
+    notification.classList.add("show");
+  }, 10);
+
+  setTimeout(() => {
+    notification.classList.remove("show");
+    setTimeout(() => {
+      document.body.removeChild(notification);
+    }, 300);
+  }, 3000);
 }
 
 function resetGame() {
@@ -143,6 +335,8 @@ function resetGame() {
     currentThrow = 1;
     scores = {};
     roundScores = {};
+    throwHistory = [];
+    playerIndices = {};
 
     localStorage.removeItem("dartGameState");
 
@@ -164,6 +358,32 @@ function generateDartboardButtons() {
     return;
   }
   dartboard.innerHTML = "";
+  
+  // Dodaj przyciski dla popularnych kombinacji
+  const quickButtons = document.createElement("div");
+  quickButtons.classList.add("quick-buttons");
+  
+  const popularScores = [
+    { label: "26", value: 26 },  // T6 + S8
+    { label: "41", value: 41 },  // T13 + S2
+    { label: "45", value: 45 },  // T15
+    { label: "60", value: 60 },  // T20
+    { label: "85", value: 85 },  // T20 + D10 + S5
+    { label: "100", value: 100 }, // T20 + D20
+    { label: "180", value: 180 }  // T20 + T20 + T20
+  ];
+  
+  popularScores.forEach(score => {
+    const button = document.createElement("button");
+    button.textContent = score.label;
+    button.classList.add("quick-btn");
+    button.onclick = () => handleDartThrow(score.value);
+    quickButtons.appendChild(button);
+  });
+  
+  dartboard.appendChild(quickButtons);
+  
+  // Standardowe przyciski
   const values = [...Array.from({ length: 20 }, (_, i) => i + 1), 25, 50];
   values.forEach((value) => {
     const button = createDartButton(value, `${value}`);
@@ -202,7 +422,104 @@ function updateDrawer() {
   });
 }
 
+// Funkcja do przełączania widoku dartboard
+function toggleDartboardView() {
+  const dartboard = document.getElementById("dartboard");
+  const isCompact = dartboard.classList.toggle("compact-view");
+  
+  localStorage.setItem("dartboardCompactView", isCompact);
+  
+  const viewToggleBtn = document.getElementById("viewToggleBtn");
+  if (viewToggleBtn) {
+    viewToggleBtn.textContent = isCompact ? "Full view" : "Compact view";
+  }
+}
+
+// Funkcja do zapisywania statystyk graczy
+function savePlayerStats() {
+  const playerStats = JSON.parse(localStorage.getItem("dartPlayerStats") || "{}");
+  
+  players.forEach(player => {
+    if (!playerStats[player]) {
+      playerStats[player] = {
+        gamesPlayed: 0,
+        wins: 0,
+        highestScore: 0,
+        averageScore: 0,
+        totalScore: 0,
+        totalThrows: 0
+      };
+    }
+    
+    // Aktualizuj statystyki dla wszystkich graczy
+    playerStats[player].gamesPlayed++;
+    
+    // Jeśli gracz wygrał (ma 0 punktów)
+    if (scores[player] === 0) {
+      playerStats[player].wins++;
+    }
+    
+    // Zapisz statystyki
+    localStorage.setItem("dartPlayerStats", JSON.stringify(playerStats));
+  });
+}
+document.addEventListener("keydown", (event) => {
+  // Obsługa klawiszy numerycznych 1-9
+  if (event.key >= "1" && event.key <= "9") {
+    handleDartThrow(Number.parseInt(event.key));
+  }
+  // Obsługa klawisza 0 dla 10 punktów
+  else if (event.key === "0") {
+    handleDartThrow(10);
+  }
+  // Obsługa klawisza D dla podwójnych (np. D2 dla podwójnej dwójki)
+  else if (event.key.toUpperCase() === "D" && !event.ctrlKey && !event.altKey) {
+    const doubleMode = true;
+    document.addEventListener(
+      "keydown",
+      function doubleListener(e) {
+        if (e.key >= "1" && e.key <= "9") {
+          handleDartThrow(Number.parseInt(e.key) * 2);
+          document.removeEventListener("keydown", doubleListener);
+        }
+      },
+      { once: true },
+    );
+  }
+  // Obsługa klawisza T dla potrójnych
+  else if (event.key.toUpperCase() === "T" && !event.ctrlKey && !event.altKey) {
+    document.addEventListener(
+      "keydown",
+      function tripleListener(e) {
+        if (e.key >= "1" && e.key <= "9") {
+          handleDartThrow(Number.parseInt(e.key) * 3);
+          document.removeEventListener("keydown", tripleListener);
+        }
+      },
+      { once: true },
+    );
+  }
+  // Obsługa klawisza M dla chybienia (miss)
+  else if (event.key.toUpperCase() === "M") {
+    handleDartThrow(0);
+  }
+  // Obsługa klawisza Z z Ctrl dla cofania (Undo)
+  else if (event.key.toLowerCase() === "z" && (event.ctrlKey || event.metaKey)) {
+    undoLastThrow();
+    event.preventDefault();
+  }
+});
+
 document.addEventListener("DOMContentLoaded", () => {
   loadGameState();
   generateDartboardButtons();
+  
+  // Sprawdź, czy istnieje zapisany widok dartboard
+  const isCompactView = localStorage.getItem("dartboardCompactView") === "true";
+  if (isCompactView) {
+    document.getElementById("dartboard").classList.add("compact-view");
+    if (document.getElementById("viewToggleBtn")) {
+      document.getElementById("viewToggleBtn").textContent = "Full view";
+    }
+  }
 });

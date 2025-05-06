@@ -7,6 +7,22 @@ let roundScores = {};
 let throwHistory = []; // Historia rzutów do cofania
 let playerIndices = {}; // Indeksy dla graczy o tych samych nazwach
 
+document.addEventListener('touchmove', function(event) {
+  if (event.scale !== 1) {
+    event.preventDefault();
+  }
+}, { passive: false });
+
+// Blokowanie podwójnego tapnięcia, które może powodować przybliżanie
+let lastTouchEnd = 0;
+document.addEventListener('touchend', function(event) {
+  const now = (new Date()).getTime();
+  if (now - lastTouchEnd <= 300) {
+    event.preventDefault();
+  }
+  lastTouchEnd = now;
+}, { passive: false });
+
 // Sprawdzenie, czy istnieje zapisany stan gry w localStorage
 function loadGameState() {
   const savedState = localStorage.getItem("dartGameState");
@@ -358,30 +374,6 @@ function generateDartboardButtons() {
     return;
   }
   dartboard.innerHTML = "";
-  
-  // Dodaj przyciski dla popularnych kombinacji
-  const quickButtons = document.createElement("div");
-  quickButtons.classList.add("quick-buttons");
-  
-  const popularScores = [
-    { label: "26", value: 26 },  // T6 + S8
-    { label: "41", value: 41 },  // T13 + S2
-    { label: "45", value: 45 },  // T15
-    { label: "60", value: 60 },  // T20
-    { label: "85", value: 85 },  // T20 + D10 + S5
-    { label: "100", value: 100 }, // T20 + D20
-    { label: "180", value: 180 }  // T20 + T20 + T20
-  ];
-  
-  popularScores.forEach(score => {
-    const button = document.createElement("button");
-    button.textContent = score.label;
-    button.classList.add("quick-btn");
-    button.onclick = () => handleDartThrow(score.value);
-    quickButtons.appendChild(button);
-  });
-  
-  dartboard.appendChild(quickButtons);
   
   // Standardowe przyciski
   const values = [...Array.from({ length: 20 }, (_, i) => i + 1), 25, 50];

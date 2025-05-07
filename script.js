@@ -63,7 +63,7 @@ function saveGameState() {
   localStorage.setItem("dartGameState", JSON.stringify(state));
 }
 
-function setGameMode(input) {
+window.setGameMode = function(input) {
   gameMode = input;
   console.log(`Game mode set to: ${gameMode}`);
   document.getElementById("mode").style.display = "none";
@@ -74,8 +74,32 @@ function addPlayerToList() {
   const playerInput = document.getElementById("playerInput");
   const playerName = playerInput.value.trim();
 
+  // Podstawowa walidacja
   if (playerName === "") {
-    alert("Enter player name!");
+    showNotification("Enter player name!", "error");
+    return;
+  }
+
+  // Walidacja długości
+  if (playerName.length < 2) {
+    showNotification("Player name must be at least 2 characters long!", "error");
+    return;
+  }
+
+  if (playerName.length > 20) {
+    showNotification("Player name cannot be longer than 20 characters!", "error");
+    return;
+  }
+
+  // Walidacja znaków
+  if (!/^[a-zA-Z0-9\s]+$/.test(playerName)) {
+    showNotification("Player name can only contain letters, numbers, and spaces!", "error");
+    return;
+  }
+
+  // Sprawdzenie czy nazwa nie składa się tylko z cyfr
+  if (/^[0-9]+$/.test(playerName)) {
+    showNotification("Player name cannot consist only of numbers!", "error");
     return;
   }
 
@@ -127,10 +151,12 @@ function startGame() {
   document.getElementById("game").style.display = "block";
 
   updateActivePlayer();
-  generateDartboardButtons();
   updateDrawer();
   updateRemainingPoints();
   saveGameState();
+  
+  // Generuj przyciski po załadowaniu gry
+  generateDartboardButtons();
 }
 
 function updateActivePlayer() {
@@ -212,22 +238,25 @@ window.onclick = (event) => {
 }
 
 function addThrowToHistory(player, points) {
-  const scoreList = document.getElementById("scoreList");
-  const historyItem = document.createElement("li");
-  historyItem.classList.add("scoreItem");
-  historyItem.innerHTML = `<span>${player}</span>: ${points} punktów`;
+  const scoreRows = document.getElementById("scoreRows");
+  if (!scoreRows) return;
 
-  // Dodaj nowy element na początku listy
-  if (scoreList.firstChild) {
-    scoreList.insertBefore(historyItem, scoreList.firstChild);
-  } else {
-    scoreList.appendChild(historyItem);
+  // Znajdź wiersz gracza
+  const playerRow = Array.from(scoreRows.children).find(row => 
+    row.querySelector('.player-name').textContent === player
+  );
+
+  if (playerRow) {
+    // Zaktualizuj punkty rundy
+    const roundScore = playerRow.querySelector('.round-score');
+    if (roundScore) {
+      const currentRoundScore = parseInt(roundScore.textContent) || 0;
+      roundScore.textContent = currentRoundScore + points;
+    }
   }
 
-  // Ogranicz historię do ostatnich 10 rzutów
-  if (scoreList.children.length > 10) {
-    scoreList.removeChild(scoreList.lastChild);
-  }
+  // Aktualizuj wyświetlanie
+  updateDrawer();
 }
 
 function submitScore(points) {
@@ -239,7 +268,8 @@ function submitScore(points) {
     throwNumber: currentThrow,
     playerScore: scores[currentPlayer],
     roundScore: roundScores[currentPlayer],
-    points: points
+    points: points,
+    fullRoundScore: roundScores[currentPlayer] + points // zapisz pełną sumę rundy
   });
   
   roundScores[currentPlayer] += points;
@@ -249,31 +279,32 @@ function submitScore(points) {
 
   if (currentThrow < 3) {
     currentThrow++;
+    updateActivePlayer();
+    return;
+  }
+
+  // Zakończ rundę
+  currentThrow = 1;
+  const roundPoints = roundScores[currentPlayer];
+
+  if (scores[currentPlayer] - roundPoints < 0) {
+    showNotification(`Za dużo punktów! Runda pominięta.`, "error");
+    roundScores[currentPlayer] = 0;
   } else {
-    const roundPoints = roundScores[currentPlayer];
+    scores[currentPlayer] -= roundPoints;
+    roundScores[currentPlayer] = 0;
 
-    if (scores[currentPlayer] - roundPoints < 0) {
-      showNotification(`Za dużo punktów! Runda pominięta.`, "error");
-    } else {
-      scores[currentPlayer] -= roundPoints;
-
-      // Użyj nieinwazyjnego powiadomienia zamiast alert
-      showNotification(`${currentPlayer} zdobył ${roundPoints} punktów!`);
-    }
+    // Użyj nieinwazyjnego powiadomienia zamiast alert
+    showNotification(`${currentPlayer} zdobył ${roundPoints} punktów!`);
 
     if (scores[currentPlayer] === 0) {
       showWinNotification(`${currentPlayer} wygrał! Gra zakończona.`);
-      setTimeout(() => {
-        resetGame();
-      }, 3000);
       return;
     }
-
-    roundScores[currentPlayer] = 0;
-    currentThrow = 1;
-    currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
   }
 
+  // Przechodź do następnego gracza tylko raz
+  currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
   updateActivePlayer();
   updateDrawer();
   updateRemainingPoints();
@@ -326,41 +357,87 @@ function showNotification(message, type = "success") {
 }
 
 function showWinNotification(message) {
-  const notification = document.createElement("div");
-  notification.classList.add("win-notification");
-  notification.textContent = message;
-  document.body.appendChild(notification);
+  // Znajdź lub utwórz element powiadomienia
+  const notification = document.querySelector('.win-notification') || document.createElement('div');
+  notification.className = 'win-notification';
+  notification.innerHTML = `
+    <div class="win-message">${message}</div>
+    <div class="win-buttons">
+      <button class="btn" onclick="restartGame(true)">Play Again</button>
+      <button class="btn" onclick="restartGame(false)">New Game</button>
+    </div>
+  `;
+  
+  // Dodaj do body jeśli nie istnieje
+  if (!document.querySelector('.win-notification')) {
+    document.body.appendChild(notification);
+  }
 
-  setTimeout(() => {
-    notification.classList.add("show");
-  }, 10);
+  // Pokaż powiadomienie
+  notification.classList.add('show');
 
-  setTimeout(() => {
-    notification.classList.remove("show");
-    setTimeout(() => {
-      document.body.removeChild(notification);
-    }, 300);
-  }, 3000);
+  // Dodaj obsługę kliknięcia na przyciski
+  const buttons = notification.querySelectorAll('button');
+  buttons.forEach(button => {
+    button.addEventListener('click', () => {
+      notification.classList.remove('show');
+      setTimeout(() => {
+        document.body.removeChild(notification);
+      }, 300);
+    });
+  });
+
+  // Dodaj obsługę kliknięcia poza powiadomieniem
+  notification.addEventListener('click', (e) => {
+    if (e.target === notification) {
+      notification.classList.remove('show');
+      setTimeout(() => {
+        document.body.removeChild(notification);
+      }, 300);
+    }
+  });
 }
 
-function resetGame() {
-  if (confirm("Are you sure you want to reset the game?")) {
-    gameMode = 0;
-    players = [];
+function restartGame(reverseOrder = false) {
+  if (reverseOrder) {
+    // Odwróć kolejność graczy
+    players.reverse();
     currentPlayerIndex = 0;
+    
+    // Resetuj wszystkie wartości
     currentThrow = 1;
-    scores = {};
-    roundScores = {};
-    throwHistory = [];
-    playerIndices = {};
+    roundScores = players.reduce((acc, player) => ({ ...acc, [player]: 0 }), {});
+    scores = players.reduce((acc, player) => ({ ...acc, [player]: gameMode }), {});
+    updateActivePlayer();
+    updateDrawer();
+    updateRemainingPoints();
+    saveGameState();
+  } else {
+    // Potwierdzenie przed resetem gry
+    if (confirm("Do you want to reset game?")) {
+      // Resetuj grę od nowa
+      gameMode = 0;
+      players = [];
+      currentPlayerIndex = 0;
+      currentThrow = 1;
+      scores = {};
+      roundScores = {};
+      throwHistory = [];
+      playerIndices = {};
 
-    localStorage.removeItem("dartGameState");
+      localStorage.removeItem("dartGameState");
 
-    document.getElementById("game").style.display = "none";
-    document.getElementById("players").style.display = "none";
-    document.getElementById("mode").style.display = "block";
-    document.querySelector(".playersList").innerHTML = "";
+      document.getElementById("game").style.display = "none";
+      document.getElementById("players").style.display = "none";
+      document.getElementById("mode").style.display = "block";
+      document.querySelector(".playersList").innerHTML = "";
+    }
   }
+}
+
+// Funkcja resetująca grę
+window.resetGame = function() {
+  restartGame(false);
 }
 
 function handleDartThrow(points) {
@@ -405,12 +482,42 @@ function toggleDrawer() {
 }
 
 function updateDrawer() {
-  const scoreList = document.getElementById("scoreList");
-  scoreList.innerHTML = "";
+  const scoreRows = document.getElementById("scoreRows");
+  scoreRows.innerHTML = "";
+  
+  // Zaktualizuj nagłówek z numerem rundy
+  const roundHeader = document.querySelector(".round-header");
+  if (roundHeader) {
+    roundHeader.textContent = `Round ${Math.ceil(currentThrow / 3)}`;
+  }
+  
   players.forEach((player) => {
-    const listItem = document.createElement("li");
-    listItem.textContent = `${player}: ${scores[player]}`;
-    scoreList.appendChild(listItem);
+    const row = document.createElement("div");
+    row.className = `table-row ${player === players[currentPlayerIndex] ? 'active' : ''}`;
+    
+    const playerName = document.createElement("div");
+    playerName.className = "table-cell player-name";
+    playerName.textContent = player;
+    
+    const scoreValue = document.createElement("div");
+    scoreValue.className = "table-cell score-value";
+    scoreValue.textContent = scores[player];
+
+    // Znajdź wynik z poprzedniej rundy
+    const lastRoundScore = throwHistory
+      .filter(throwData => throwData.playerIndex === players.indexOf(player))
+      .filter(throwData => throwData.throwNumber % 3 === 0) // tylko końce rund
+      .pop(); // weź ostatni rzut (ostatnią rundę)
+
+    const lastRoundCell = document.createElement("div");
+    lastRoundCell.className = "table-cell round-score";
+    lastRoundCell.textContent = lastRoundScore ? lastRoundScore.fullRoundScore : "-";
+    
+    row.appendChild(playerName);
+    row.appendChild(scoreValue);
+    row.appendChild(lastRoundCell);
+    
+    scoreRows.appendChild(row);
   });
 }
 
@@ -504,6 +611,8 @@ document.addEventListener("keydown", (event) => {
 
 document.addEventListener("DOMContentLoaded", () => {
   loadGameState();
+  
+  // Generuj przyciski po załadowaniu strony
   generateDartboardButtons();
   
   // Sprawdź, czy istnieje zapisany widok dartboard

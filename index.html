@@ -75,54 +75,57 @@
 
     <div id="helpModal" class="modal">
       <div class="modal-content">
-        <span class="close-btn" onclick="closeHelp()">&times;</span>
-        <h2>How to Play Dart Score Tracker</h2>
-        <ol>
-          <li>Choose a game mode (301 or 501)</li>
-          <li>Add at least 2 players</li>
-          <li>Each player starts with the selected score (301 or 501) and aims to reduce it to exactly 0</li>
-          <li>Players take turns throwing 3 darts per round</li>
-          <li>Click on the dartboard buttons to record scores</li>
-          <li>If a player's score would go below 0 in a round, the entire round is skipped</li>
-          <li>The first player to reach exactly 0 wins!</li>
-        </ol>
-        <h3>Keyboard Shortcuts:</h3>
-        <ul>
-          <li>Numbers 1-9: Score single numbers</li>
-          <li>D + number: Score doubles (e.g., D2 for double 2)</li>
-          <li>T + number: Score triples (e.g., T3 for triple 3)</li>
-          <li>M: Miss (0 points)</li>
-          <li>Ctrl+Z: Cofnij ostatni rzut</li>
-        </ul>
-        <h3>Nowe funkcje:</h3>
-        <ul>
-          <li>Cofanie rzutu: Możesz cofnąć ostatni rzut używając przycisku "Cofnij rzut" lub skrótu Ctrl+Z</li>
-          <li>Wskazówki checkout: Gdy masz mniej niż 180 punktów, zobaczysz sugestię jak zakończyć grę</li>
-          <li>Kompaktowy widok: Przełącz na bardziej kompaktowy układ przycisków</li>
-        </ul>
+        <div class="modal-header">
+          <h2>How to Play Dart Score Tracker</h2>
+          <button class="close-btn" onclick="closeHelp()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="help-section">
+            <h3>Game Setup</h3>
+            <ul>
+              <li><span class="icon">🎯</span> Choose a game mode (301 or 501)</li>
+              <li><span class="icon">👥</span> Add at least 2 players</li>
+              <li><span class="icon">🎲</span> Each player starts with the selected score</li>
+            </ul>
+          </div>
+
+          <div class="help-section">
+            <h3>Game Rules</h3>
+            <ul>
+              <li><span class="icon">🎯</span> Players take turns throwing 3 darts per round</li>
+              <li><span class="icon">📊</span> Click on the dartboard buttons to record scores</li>
+              <li><span class="icon">⚠️</span> If a player's score would go below 0, the round is skipped</li>
+              <li><span class="icon">🏆</span> First player to reach exactly 0 wins!</li>
+            </ul>
+          </div>
+
+          <div class="help-section">
+            <h3>Keyboard Shortcuts</h3>
+            <ul>
+              <li><span class="key">1-9</span> Score single numbers</li>
+              <li><span class="key">D + number</span> Score doubles (e.g., D2 for double 2)</li>
+              <li><span class="key">T + number</span> Score triples (e.g., T3 for triple 3)</li>
+              <li><span class="key">M</span> Miss (0 points)</li>
+              <li><span class="key">Ctrl+Z</span> Undo last throw</li>
+            </ul>
+          </div>
+
+          <div class="help-section">
+            <h3>Features</h3>
+            <ul>
+              <li><span class="icon">↩️</span> Undo throw: Use the "Undo" button or Ctrl+Z</li>
+              <li><span class="icon">💡</span> Checkout hints: See suggestions for finishing the game</li>
+              <li><span class="icon">📱</span> Compact view: Toggle for a more compact button layout</li>
+              <li><span class="icon">📊</span> Score drawer: View all players' scores and round history</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
 
     <footer class="app-footer">
       &copy; 2025 Dollat | <a href="#" onclick="showHelp()">Help</a>
     </footer>
-
-    <!-- Modal Pomocy -->
-    <div id="helpModal" class="modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>How to Play</h2>
-          <button class="close-btn" onclick="closeHelp()">&times;</button>
-        </div>
-        <ul>
-          <li>Click on the numbers to score points</li>
-          <li>Each player takes turns throwing three darts</li>
-          <li>First to reach zero wins</li>
-          <li>Don't go below zero!</li>
-          <li>Kompaktowy widok: Przełącz na bardziej kompaktowy układ przycisków</li>
-        </ul>
-      </div>
-    </div>
 
     <script src="script.js"></script>
     <script src="ios-zoom-fix.js"></script>

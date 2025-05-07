@@ -277,6 +277,14 @@ function submitScore(points) {
   // Dodaj rzut do historii
   addThrowToHistory(currentPlayer, points);
 
+  // Sprawdź czy gracz wygrał (osiągnął dokładnie 0 punktów)
+  if (scores[currentPlayer] - roundScores[currentPlayer] === 0) {
+    scores[currentPlayer] = 0;
+    showWinNotification(`${currentPlayer} wygrał! Gra zakończona.`);
+    savePlayerStats();
+    return;
+  }
+
   if (currentThrow < 3) {
     currentThrow++;
     updateActivePlayer();
@@ -296,11 +304,6 @@ function submitScore(points) {
 
     // Użyj nieinwazyjnego powiadomienia zamiast alert
     showNotification(`${currentPlayer} zdobył ${roundPoints} punktów!`);
-
-    if (scores[currentPlayer] === 0) {
-      showWinNotification(`${currentPlayer} wygrał! Gra zakończona.`);
-      return;
-    }
   }
 
   // Przechodź do następnego gracza tylko raz
@@ -408,6 +411,7 @@ function restartGame(reverseOrder = false) {
     currentThrow = 1;
     roundScores = players.reduce((acc, player) => ({ ...acc, [player]: 0 }), {});
     scores = players.reduce((acc, player) => ({ ...acc, [player]: gameMode }), {});
+    throwHistory = []; // Wyczyść historię rzutów
     updateActivePlayer();
     updateDrawer();
     updateRemainingPoints();
